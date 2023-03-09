@@ -22,7 +22,7 @@ import java.io.File
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
-        title = "Art Preview Generator",
+        title = "Art Thumbnail Generator",
         state = rememberWindowState(width = 300.dp, height = 300.dp),
     ) {
         val workingDirectory = remember { mutableStateOf<String?>(null) }
@@ -75,18 +75,13 @@ fun main() = application {
                                 val imageSize = calculateImageSize(frame)
                                 val scaledImage = image.getScaledInstance(imageSize.first, imageSize.second, Image.SCALE_SMOOTH)
 
-                                // crop image to account for part of picture that will be wrapped around frame
-                                val crop = calculateCrop(frame, Pair(imageSize.first, imageSize.second))
-                                val croppedImage = scaledImage.toBufferedImage().getSubimage(crop.x, crop.y, crop.width, crop.height)
-
                                 // layer images to create thumbnail
                                 val finalImage = BufferedImage(Constants.FRAME_CANVAS_WIDTH, Constants.FRAME_CANVAS_HEIGHT, BufferedImage.TYPE_INT_RGB)
                                 val graphics = finalImage.createGraphics()
 
-
                                 // calculate image position
                                 val imagePosition = calculateImagePosition(frame)
-                                graphics.drawImage(croppedImage, imagePosition.first, imagePosition.second, null)
+                                graphics.drawImage(scaledImage, imagePosition.first, imagePosition.second, null)
                                 graphics.drawImage(frameImage, 0, 0, null)
 
                                 // determine new filename
@@ -113,25 +108,17 @@ fun main() = application {
 }
 
 fun calculateImageSize(frame: Frame): Pair<Int, Int> {
-    val frameWidth = frame.widthPixels
-    val frameHeight = frame.heightPixels
-    val imageWidth = frameWidth - (frame.padding * 2) + (frame.wrapSize * 2)
-    val imageHeight = frameHeight - (frame.padding * 2) + (frame.wrapSize * 2)
+    val imageWidth = frame.imageWidthPixels
+    val imageHeight = frame.imageHeightPixels
     return Pair(imageWidth, imageHeight)
 }
 
 fun calculateImagePosition(frame: Frame): Pair<Int, Int> {
     val frameCanvasWidth = Constants.FRAME_CANVAS_WIDTH
     val frameCanvasHeight = Constants.FRAME_CANVAS_HEIGHT
-    val frameWidth = frame.widthPixels
-    val frameHeight = frame.heightPixels
-    val x = ((frameCanvasWidth - frameWidth) / 2) + frame.padding
-    val y = ((frameCanvasHeight - frameHeight) / 2) + frame.padding
+    val x = ((frameCanvasWidth - frame.imageWidthPixels) / 2)
+    val y = ((frameCanvasHeight - frame.imageHeightPixels) / 2)
     return Pair(x, y)
-}
-
-fun calculateCrop(frame: Frame, imageSize: Pair<Int, Int>): Crop {
-    return Crop(frame.wrapSize, frame.wrapSize, imageSize.first - (frame.wrapSize * 2), imageSize.second - (frame.wrapSize * 2))
 }
 
 fun getImageShape(imageFilename: String): Shape {
@@ -159,8 +146,6 @@ fun recursiveListFiles(dir: File): List<File> {
     val these = dir.listFiles()?.toList() ?: emptyList()
     return these.filter { it.isFile && it.extension == "png" }.toList().plus(these.filter { it.isDirectory }.flatMap { recursiveListFiles(it) })
 }
-
-data class Crop(val x: Int, val y: Int, val width: Int, val height: Int)
 
 fun Image.toBufferedImage(): BufferedImage {
     if (this is BufferedImage) {

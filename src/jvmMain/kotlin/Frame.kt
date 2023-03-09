@@ -1,4 +1,5 @@
 import java.io.File
+import kotlin.math.roundToInt
 
 class Frame(
     val filePath: String,
@@ -9,12 +10,16 @@ class Frame(
     val type: Type
     val color: String
     val shape: Shape
-    val padding: Int
-    val wrapSize: Int
     val widthPixels: Int
         get() = width * 100
     val heightPixels: Int
         get() = height * 100
+    val imageWidth: Double
+    val imageHeight: Double
+    val imageWidthPixels: Int
+        get() = (imageWidth * 100).roundToInt()
+    val imageHeightPixels: Int
+        get() = (imageHeight * 100).roundToInt()
 
     init {
         val filename = File(filePath).name
@@ -24,9 +29,9 @@ class Frame(
         color = matchResult.groups[3]!!.value
         width = matchResult.groups[4]!!.value.toInt()
         height = matchResult.groups[5]!!.value.toInt()
+        imageHeight = height + findImageSizeDiff()
+        imageWidth = width + findImageSizeDiff()
         shape = findShape()
-        padding = findPadding()
-        wrapSize = findWrapSize()
     }
 
     private fun findShape(): Shape {
@@ -39,27 +44,24 @@ class Frame(
         }
     }
 
-    private fun findPadding(): Int {
-        return if (type == Type.FP) {
-            200
-        } else if (type == Type.FMP && ((width == 30 && height == 40) || (width == 40 && height == 30))) {
-            500
-        } else if (type == Type.FMP) {
-            375
-        } else if (type == Type.FMW) {
-            150
-        } else if (type == Type.FFMW) {
-            63
-        } else {
-            0
+    // difference in image size from frame size
+    private fun findImageSizeDiff(): Double {
+        return when (type) {
+            Type.CAB -> 0.25
+            Type.FP -> -3.5
+            Type.G -> 4.0
+            Type.FMW -> -2.75
+            Type.FFMW -> 1.25
+            Type.FMP -> findFramePrintWithMatSizeDiff()
         }
     }
 
-    private fun findWrapSize(): Int {
-        return if (type == Type.FP) {
-            25
-        } else {
-            0
+    private fun findFramePrintWithMatSizeDiff(): Double {
+        return when {
+            width == 30 && height == 30 -> -8.5
+            width == 40 && height == 30 -> -9.25
+            width == 30 && height == 40 -> -9.25
+            else -> -7.5
         }
     }
 }
