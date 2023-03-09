@@ -20,3 +20,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: packageReleaseExe
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Package
+          path: build/compose/binaries/main-release/exe/ArtPreviewGenerator*.exe
