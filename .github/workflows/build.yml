@@ -16,7 +16,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build Artifacts
+      - name: Build Release Installer
         uses: gradle/gradle-build-action@v2
         with:
           arguments: packageReleaseDistributionForCurrentOS
@@ -26,7 +26,14 @@ jobs:
         with:
           arguments: createReleaseDistributable
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload Release Installer
+        uses: actions/upload-artifact@v3
         with:
-          name: Package
-          path: build/compose/binaries/main-release/exe/ArtPreviewGenerator*.exe
+          name: Installer
+          path: build/compose/binaries/main-release/exe/*.exe
+
+      - name: Upload Release Distributable
+        uses: actions/upload-artifact@v3
+        with:
+          name: Distributable
+          path: build/compose/binaries/main-release/app/*.exe

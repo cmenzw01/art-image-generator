@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import java.awt.FileDialog
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
@@ -28,11 +29,11 @@ fun main() = application {
         val workingDirectory = remember { mutableStateOf<String?>(null) }
         val progress = remember { mutableStateOf(0.0f) }
 
-        val fileDialog = java.awt.FileDialog(java.awt.Frame()).apply {
+        val fileDialog = FileDialog(java.awt.Frame()).apply {
             isVisible = false
             addWindowListener(object : java.awt.event.WindowAdapter() {
-                override fun windowClosed(e: java.awt.event.WindowEvent?) {
-                    workingDirectory.value = directory
+                override fun windowClosed(e: java.awt.event.WindowEvent) {
+                    workingDirectory.value = (e.source as FileDialog).directory
                 }
             })
         }
