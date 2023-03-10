@@ -19,7 +19,13 @@ jobs:
       - name: Build Artifacts
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: packageReleaseExe
+          arguments: packageReleaseDistributionForCurrentOS
+
+      - name: Create Release Distributable
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: createReleaseDistributable
+
       - uses: actions/upload-artifact@v3
         with:
           name: Package

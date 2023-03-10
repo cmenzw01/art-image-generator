@@ -33,8 +33,9 @@ compose.desktop {
     application {
         mainClass = "MainKt"
         nativeDistributions {
+            modules("java.instrument", "jdk.unsupported")
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe)
-            packageName = "ArtPreviewGenerator"
+            packageName = "Art Preview Generator"
             packageVersion = "1.0.0"
         }
     }
