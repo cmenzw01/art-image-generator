@@ -1,35 +1,50 @@
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.Button
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ProgressIndicatorDefaults
 import androidx.compose.material.Text
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
+import javax.imageio.ImageIO
 import javax.swing.JFileChooser
 
 @Preview
 fun main() = application {
+    val scope = rememberCoroutineScope()
+    val workingDirectory = remember { mutableStateOf<String?>(null) }
+    val progress = remember { mutableStateOf(0.0f) }
+    val animatedProgress = animateFloatAsState(
+        targetValue = progress.value,
+        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+    ).value
+    val buttonEnabled = remember { mutableStateOf(false) }
+
     Window(
         onCloseRequest = ::exitApplication,
-        title = "Art Thumbnail Generator",
+        title = "Art Preview Generator",
         state = rememberWindowState(width = 300.dp, height = 300.dp),
     ) {
-        val workingDirectory = remember { mutableStateOf<String?>(null) }
-        val progress = remember { mutableStateOf(0.0f) }
-
         val jfc = JFileChooser()
+        jfc.fileFilter = javax.swing.filechooser.FileNameExtensionFilter("PNG Images", "png")
 
         MaterialTheme {
             Column(Modifier.fillMaxSize(), Arrangement.spacedBy(5.dp)) {
@@ -40,6 +55,7 @@ fun main() = application {
                         if (returnValue == JFileChooser.APPROVE_OPTION) {
                             val selectedFile = jfc.selectedFile
                             workingDirectory.value = selectedFile.parent
+                            buttonEnabled.value = true
                         }
                     },
                 ) {
@@ -48,58 +64,17 @@ fun main() = application {
                 Button(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     onClick = {
-                        val dir = File(workingDirectory.value!!)
-                        val outputDir = File(workingDirectory.value!! + "/output")
-                        if (!outputDir.exists()) {
-                            outputDir.mkdir()
+                        buttonEnabled.value = false
+                        scope.launch(Dispatchers.IO) {
+                            generateImages(workingDirectory, progress, buttonEnabled)
                         }
-
-                        val imageFiles = dir.listFiles()?.filter { it.isFile && it.extension == "png" }
-                        var counter = 0
-
-                        imageFiles?.forEach { file ->
-                            // read master image
-                            val image = javax.imageio.ImageIO.read(file)
-
-                            // find frames compatible with image
-                            val frames = getCompatibleFrames(file.name, workingDirectory.value!!)
-
-                            frames.forEach { frame ->
-                                // read frame
-                                val frameFile = File(frame.filePath)
-                                val frameImage = javax.imageio.ImageIO.read(frameFile)
-
-                                // scale image to fit in frame
-                                val imageSize = calculateImageSize(frame)
-                                val scaledImage = image.getScaledInstance(imageSize.first, imageSize.second, Image.SCALE_SMOOTH)
-
-                                // layer images to create thumbnail
-                                val finalImage = BufferedImage(Constants.FRAME_CANVAS_WIDTH, Constants.FRAME_CANVAS_HEIGHT, BufferedImage.TYPE_INT_RGB)
-                                val graphics = finalImage.createGraphics()
-
-                                // calculate image position
-                                val imagePosition = calculateImagePosition(frame)
-                                graphics.drawImage(scaledImage, imagePosition.first, imagePosition.second, null)
-                                graphics.drawImage(frameImage, 0, 0, null)
-
-                                // determine new filename
-                                val newFileName = file.nameWithoutExtension.split("-").first().trim() + frameFile.name
-
-                                // save thumbnail
-                                val outputFile = File(outputDir, newFileName)
-                                javax.imageio.ImageIO.write(finalImage, "PNG", outputFile)
-                            }
-
-                            counter++
-                            progress.value = counter.toFloat() / imageFiles.size.toFloat()
-                        }
-                        workingDirectory.value = null
                     },
-                    enabled = workingDirectory.value != null,
+                    enabled = buttonEnabled.value,
                 ) {
                     Text("Generate")
                 }
-                LinearProgressIndicator(progress = progress.value)
+                LinearProgressIndicator(progress = animatedProgress, modifier = Modifier.height(10.dp).align(Alignment.CenterHorizontally))
+                Text((progress.value * 100).toInt().toString() + "%", modifier = Modifier.align(Alignment.CenterHorizontally))
             }
         }
     }
@@ -156,4 +131,60 @@ fun Image.toBufferedImage(): BufferedImage {
     graphics2D.dispose()
 
     return bufferedImage
+}
+
+suspend fun generateImages(workingDirectory: MutableState<String?>, progress: MutableState<Float>, buttonEnabled: MutableState<Boolean>) {
+    val dir = File(workingDirectory.value!!)
+    val outputDir = File("${workingDirectory.value!!}/output")
+    if (!outputDir.exists()) {
+        outputDir.mkdir()
+    }
+
+    val imageFiles = dir.listFiles()?.filter { it.isFile && it.extension == "png" }
+    var imageCounter = 0f
+
+    imageFiles?.forEach { file ->
+        // read master image
+        val image = ImageIO.read(file)
+
+        // find frames compatible with image
+        val frames = getCompatibleFrames(file.name, workingDirectory.value!!)
+        var frameCounter = 0f
+        val imagePercent = imageCounter / imageFiles.size
+
+        frames.forEach { frame ->
+
+            // read frame
+            val frameFile = File(frame.filePath)
+            val frameImage = ImageIO.read(frameFile)
+
+            // scale image to fit in frame
+            val imageSize = calculateImageSize(frame)
+            val scaledImage = image.getScaledInstance(imageSize.first, imageSize.second, Image.SCALE_SMOOTH)
+
+            // layer images to create thumbnail
+            val finalImage = BufferedImage(Constants.FRAME_CANVAS_WIDTH, Constants.FRAME_CANVAS_HEIGHT, BufferedImage.TYPE_INT_RGB)
+            val graphics = finalImage.createGraphics()
+
+            // calculate image position
+            val imagePosition = calculateImagePosition(frame)
+            graphics.drawImage(scaledImage, imagePosition.first, imagePosition.second, null)
+            graphics.drawImage(frameImage, 0, 0, null)
+
+            // determine new filename
+            val newFileName = file.nameWithoutExtension.split("-").first().trim() + frameFile.name
+
+            // save thumbnail
+            val outputFile = File(outputDir, newFileName)
+            ImageIO.write(finalImage, "PNG", outputFile)
+
+            frameCounter++
+            val framePercent = frameCounter / (frames.size)
+            progress.value = imagePercent + (framePercent / imageFiles.size)
+        }
+
+        imageCounter++
+    }
+
+    workingDirectory.value = null
 }

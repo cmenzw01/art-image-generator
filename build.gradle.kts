@@ -37,6 +37,16 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe)
             packageName = "Art Preview Generator"
             packageVersion = "1.0.0"
+
+            val iconsRoot = project.file("src/jvmMain/resources")
+
+            windows {
+                menu = true
+                iconFile.set(iconsRoot.resolve("windows/design_decor.ico"))
+            }
+            macOS {
+                iconFile.set(iconsRoot.resolve("macos/design_decor.icns"))
+            }
         }
     }
 }
