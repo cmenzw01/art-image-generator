@@ -16,7 +16,7 @@ repositories {
 
 kotlin {
     jvm {
-        jvmToolchain(8)
+        jvmToolchain(17)
         withJava()
     }
     sourceSets {
@@ -33,7 +33,7 @@ compose.desktop {
     application {
         mainClass = "MainKt"
         nativeDistributions {
-            modules("java.instrument", "jdk.unsupported")
+            includeAllModules = true
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Exe)
             packageName = "Art Preview Generator"
             packageVersion = "1.0.0"
