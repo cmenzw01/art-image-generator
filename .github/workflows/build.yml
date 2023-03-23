@@ -26,9 +26,3 @@ jobs:
         with:
           name: Installer
           path: build/compose/binaries/main-release/exe/*.exe
-
-      - name: Upload Release Distributable
-        uses: actions/upload-artifact@v3
-        with:
-          name: Distributable
-          path: build/compose/binaries/main-release/app/*.exe
