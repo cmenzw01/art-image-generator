@@ -21,11 +21,6 @@ jobs:
         with:
           arguments: packageReleaseDistributionForCurrentOS
 
-      - name: Create Release Distributable
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: createReleaseDistributable
-
       - name: Upload Release Installer
         uses: actions/upload-artifact@v3
         with:
