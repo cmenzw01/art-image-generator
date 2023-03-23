@@ -121,10 +121,10 @@ fun calculateImagePosition(frame: Frame): Pair<Int, Int> {
 fun getImageShape(imageFilename: String): Shape {
     val imageShape = when {
         imageFilename.endsWith("horizontal.png", ignoreCase = true) -> Shape.HORIZONTAL
-        imageFilename.endsWith("horizontal 3624.png", ignoreCase = true) -> Shape.HORIZONTAL_36_24
+        imageFilename.endsWith("3624.png", ignoreCase = true) -> Shape.HORIZONTAL_36_24
         imageFilename.endsWith("square.png", ignoreCase = true) -> Shape.SQUARE
         imageFilename.endsWith("vertical.png", ignoreCase = true) -> Shape.VERTICAL
-        imageFilename.endsWith("vertical 2436.png", ignoreCase = true) -> Shape.VERTICAL_24_36
+        imageFilename.endsWith("2436.png", ignoreCase = true) -> Shape.VERTICAL_24_36
         else -> throw IllegalArgumentException("Invalid image filename: $imageFilename")
     }
     return imageShape
