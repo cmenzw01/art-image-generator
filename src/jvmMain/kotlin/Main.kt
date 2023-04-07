@@ -135,7 +135,13 @@ fun getCompatibleFrames(imageFilename: String, workingDirectory: String): List<F
     val dir = File(workingDirectory)
     val framesDir = File(dir.parent + "/frames")
     val allFrameFiles = recursiveListFiles(framesDir)
-    val allFrames = allFrameFiles.map { Frame(it.absolutePath) }
+    val allFrames = allFrameFiles.map {
+        try {
+            Frame(it.absolutePath)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Error reading frame: ${it.absolutePath}")
+        }
+    }
     return allFrames.filter { imageShape == it.shape }
 }
 
