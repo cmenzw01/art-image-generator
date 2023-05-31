@@ -1,7 +1,9 @@
 enum class Shape {
     HORIZONTAL,
     HORIZONTAL_36_24,
+    HORIZONTAL_40_20,
+    HORIZONTAL_48_20,
+    HORIZONTAL_60_20,
     SQUARE,
     VERTICAL,
-    VERTICAL_24_36,
 }

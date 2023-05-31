@@ -49,7 +49,7 @@ fun main() = application {
         state = rememberWindowState(width = 300.dp, height = 300.dp),
     ) {
         val jfc = JFileChooser()
-        jfc.fileFilter = javax.swing.filechooser.FileNameExtensionFilter("PNG Images", "png")
+        jfc.fileFilter = javax.swing.filechooser.FileNameExtensionFilter("Images", *Constants.IMAGE_TYPES.toTypedArray())
 
         MaterialTheme {
             Column(Modifier.fillMaxSize(), Arrangement.spacedBy(5.dp)) {
@@ -119,12 +119,15 @@ fun calculateImagePosition(frame: Frame): Pair<Int, Int> {
 }
 
 fun getImageShape(imageFilename: String): Shape {
+    val fileShape = imageFilename.split("-")[1].split(".")[0]
     val imageShape = when {
-        imageFilename.endsWith("horizontal.png", ignoreCase = true) -> Shape.HORIZONTAL
-        imageFilename.endsWith("3624.png", ignoreCase = true) -> Shape.HORIZONTAL_36_24
-        imageFilename.endsWith("square.png", ignoreCase = true) -> Shape.SQUARE
-        imageFilename.endsWith("vertical.png", ignoreCase = true) -> Shape.VERTICAL
-        imageFilename.endsWith("2436.png", ignoreCase = true) -> Shape.VERTICAL_24_36
+        fileShape.endsWith("horizontal", ignoreCase = true) -> Shape.HORIZONTAL
+        fileShape.endsWith("square", ignoreCase = true) -> Shape.SQUARE
+        fileShape.endsWith("vertical", ignoreCase = true) -> Shape.VERTICAL
+        fileShape.endsWith("3624", ignoreCase = true) -> Shape.HORIZONTAL_36_24
+        fileShape.endsWith("4020", ignoreCase = true) -> Shape.HORIZONTAL_40_20
+        fileShape.endsWith("4820", ignoreCase = true) -> Shape.HORIZONTAL_48_20
+        fileShape.endsWith("6020", ignoreCase = true) -> Shape.HORIZONTAL_60_20
         else -> throw IllegalArgumentException("Invalid image filename: $imageFilename")
     }
     return imageShape
@@ -139,7 +142,7 @@ fun getCompatibleFrames(imageFilename: String, workingDirectory: String): List<F
         try {
             Frame(it.absolutePath)
         } catch (e: Exception) {
-            throw IllegalArgumentException("Error reading frame: ${it.absolutePath}")
+            throw IllegalArgumentException("Error reading frame: ${it.absolutePath} \n ${e.message}")
         }
     }
     return allFrames.filter { imageShape == it.shape }
@@ -147,7 +150,7 @@ fun getCompatibleFrames(imageFilename: String, workingDirectory: String): List<F
 
 fun recursiveListFiles(dir: File): List<File> {
     val these = dir.listFiles()?.toList() ?: emptyList()
-    return these.filter { it.isFile && it.extension == "png" }.toList().plus(these.filter { it.isDirectory }.flatMap { recursiveListFiles(it) })
+    return these.filter { it.isFile && Constants.IMAGE_TYPES.contains(it.extension) }.toList().plus(these.filter { it.isDirectory }.flatMap { recursiveListFiles(it) })
 }
 
 suspend fun generateImages(workingDirectory: MutableState<String?>, progress: MutableState<Float>, errorMessage: MutableState<String?>) {
@@ -158,7 +161,9 @@ suspend fun generateImages(workingDirectory: MutableState<String?>, progress: Mu
             outputDir.mkdir()
         }
 
-        val imageFiles = dir.listFiles()?.filter { it.isFile && it.extension == "png" }
+        val imageFiles = dir.listFiles()
+            ?.filter { it.isFile && Constants.IMAGE_TYPES.contains(it.extension) }
+            ?.filter { it.name.contains("-") } // filter out original image and just use resized
         var imageCounter = 0f
 
         imageFiles?.forEach { file ->
@@ -194,7 +199,7 @@ suspend fun generateImages(workingDirectory: MutableState<String?>, progress: Mu
                 graphics.drawImage(frameImage, 0, 0, null)
 
                 // determine new filename
-                val newFileName = file.nameWithoutExtension.split("-").first().trim() + frameFile.name
+                val newFileName = file.nameWithoutExtension.split("-").first().trim() + "-" + frameFile.name
 
                 // save thumbnail
                 val outputFile = File(outputDir, newFileName)
@@ -210,6 +215,6 @@ suspend fun generateImages(workingDirectory: MutableState<String?>, progress: Mu
 
         workingDirectory.value = null
     } catch (e: Exception) {
-        errorMessage.value = e.message
+        errorMessage.value = e.message + "\n\n" + e.stackTraceToString()
     }
 }
