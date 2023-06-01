@@ -46,7 +46,7 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "Art Preview Generator",
-        state = rememberWindowState(width = 300.dp, height = 300.dp),
+        state = rememberWindowState(width = 700.dp, height = 700.dp),
     ) {
         val jfc = JFileChooser()
         jfc.fileFilter = javax.swing.filechooser.FileNameExtensionFilter("Images", *Constants.IMAGE_TYPES.toTypedArray())
@@ -142,7 +142,7 @@ fun getCompatibleFrames(imageFilename: String, workingDirectory: String): List<F
         try {
             Frame(it.absolutePath)
         } catch (e: Exception) {
-            throw IllegalArgumentException("Error reading frame: ${it.absolutePath} \n ${e.message}")
+            throw IllegalArgumentException("Error reading frame: ${it.absolutePath}", e)
         }
     }
     return allFrames.filter { imageShape == it.shape }

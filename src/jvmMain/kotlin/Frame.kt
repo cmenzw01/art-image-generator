@@ -26,10 +26,11 @@ class Frame(
             ?: throw IllegalArgumentException("Invalid frame filename: $filename")
 
         try {
-            val frameTypeString = matchResult.groups[1]!!.value.replace("-", "")
+            val frameTypeString = matchResult.groups[1]!!.value.replace("-", "").trim()
             frameType = FrameType.valueOf(frameTypeString)
         } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException("Invalid frame type: ${matchResult.groups[1]!!.value}")
+            val validFrameTypes = FrameType.values().joinToString(", ") { it.name }
+            throw IllegalArgumentException("Invalid frame type: \"${matchResult.groups[1]!!.value}\" \n ${e.message} \n Valid frame types: $validFrameTypes", e)
         }
 
         color = matchResult.groups[2]?.value
