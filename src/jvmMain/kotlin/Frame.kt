@@ -6,7 +6,7 @@ class Frame(
 ) {
     val width: Int
     val height: Int
-    val type: Type
+    val frameType: FrameType
     val color: String?
     val shape: Shape
     val widthPixels: Int
@@ -23,7 +23,15 @@ class Frame(
     init {
         val filename = File(filePath).name
         val matchResult = FrameRegex.regex.matchEntire(filename)
-        type = Type.valueOf(matchResult!!.groups[1]!!.value.replace("-", ""))
+            ?: throw IllegalArgumentException("Invalid frame filename: $filename")
+
+        try {
+            val frameTypeString = matchResult.groups[1]!!.value.replace("-", "")
+            frameType = FrameType.valueOf(frameTypeString)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Invalid frame type: ${matchResult.groups[1]!!.value}")
+        }
+
         color = matchResult.groups[2]?.value
         width = matchResult.groups[3]!!.value.toInt()
         height = matchResult.groups[4]!!.value.toInt()
@@ -34,7 +42,7 @@ class Frame(
     }
 
     private fun findShape(): Shape {
-        return if (type == Type.FMP) {
+        return if (frameType == FrameType.FMP) {
             when {
                 width < height -> Shape.VERTICAL
                 width == height -> Shape.SQUARE
@@ -44,7 +52,7 @@ class Frame(
                 width == 60 && height == 30 -> Shape.HORIZONTAL_48_20
                 else -> Shape.HORIZONTAL
             }
-        } else if (type == Type.FTP || type == Type.GW || type == Type.FFMW || type == Type.AC) {
+        } else if (frameType == FrameType.FTP || frameType == FrameType.GW || frameType == FrameType.FFMW || frameType == FrameType.AC) {
             when {
                 width < height -> Shape.VERTICAL
                 width == height -> Shape.SQUARE
@@ -56,7 +64,7 @@ class Frame(
                 else -> Shape.HORIZONTAL
             }
         } else {
-            throw IllegalStateException("Not implemented")
+            throw IllegalStateException("Invalid frame type: $frameType")
         }
     }
 
@@ -82,7 +90,7 @@ class Frame(
 //    }
 
     private fun findImageSize(): Pair<Double, Double> {
-        if (type == Type.FMP) {
+        if (frameType == FrameType.FMP) {
             return when {
                 width == 18 && height == 24 -> Pair(12.56, 16.75)
                 width == 20 && height == 20 -> Pair(12.75, 12.75)
@@ -96,9 +104,9 @@ class Frame(
                 width == 48 && height == 20 -> Pair(33.6, 11.2)
                 width == 60 && height == 20 -> Pair(35.0, 11.67)
                 width == 60 && height == 30 -> Pair(36.0, 15.0)
-                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $type")
+                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $frameType")
             }
-        } else if (type == Type.FTP) {
+        } else if (frameType == FrameType.FTP) {
             return when {
                 width == 18 && height == 24 -> Pair(15.3, 20.4)
                 width == 20 && height == 20 -> Pair(16.5, 16.5)
@@ -112,9 +120,9 @@ class Frame(
                 width == 48 && height == 20 -> Pair(37.5, 15.52)
                 width == 60 && height == 20 -> Pair(38.0, 12.67)
                 width == 60 && height == 30 -> Pair(38.0, 19.0)
-                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $type")
+                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $frameType")
             }
-        } else if (type == Type.GW) {
+        } else if (frameType == FrameType.GW) {
             return when {
                 width == 18 && height == 24 -> Pair(22.0, 29.33)
                 width == 20 && height == 20 -> Pair(24.0, 24.0)
@@ -128,17 +136,17 @@ class Frame(
                 width == 48 && height == 20 -> Pair(45.6, 19.0)
                 width == 60 && height == 20 -> Pair(46.5, 15.5)
                 width == 60 && height == 30 -> Pair(44.0, 22.0)
-                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $type")
+                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $frameType")
             }
-        } else if (type == Type.FFMW) {
+        } else if (frameType == FrameType.FFMW) {
             return when {
                 width == 40 && height == 20 -> Pair(42.0, 21.0)
                 width == 48 && height == 20 -> Pair(42.0, 17.5)
                 width == 60 && height == 20 -> Pair(42.75, 14.25)
                 width == 60 && height == 30 -> Pair(42.0, 21.0)
-                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $type")
+                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $frameType")
             }
-        } else if (type == Type.AC) {
+        } else if (frameType == FrameType.AC) {
             return when {
                 width == 18 && height == 24 -> Pair(18.25, 24.33)
                 width == 20 && height == 20 -> Pair(20.25, 20.25)
@@ -152,15 +160,15 @@ class Frame(
                 width == 48 && height == 20 -> Pair(40.25, 16.77)
                 width == 60 && height == 20 -> Pair(40.52, 13.42)
                 width == 60 && height == 30 -> Pair(40.5, 20.25)
-                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $type")
+                else -> throw IllegalArgumentException("Invalid frame size: $width x $height for type $frameType")
             }
         } else {
-            throw IllegalArgumentException("Invalid frame type: $type")
+            throw IllegalArgumentException("Invalid frame type: $frameType")
         }
     }
 }
 
-enum class Type {
+enum class FrameType {
     AC, // Acrylic
     FMP, // Framed Print with Mat
     FTP, // Framed Textured Panel
